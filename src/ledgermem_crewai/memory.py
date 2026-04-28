@@ -30,15 +30,14 @@ class LedgerMemLongTermMemory:
         agent: str | None = None,
     ) -> None:
         """Persist ``value`` to LedgerMem with optional metadata."""
-        merged: dict[str, Any] = {
-            "source": "crewai",
-            "saved_at": datetime.now(timezone.utc).isoformat(),
-        }
+        # Caller metadata is merged FIRST so trusted server-controlled fields
+        # (source, agent_id, saved_at) cannot be overwritten by untrusted input.
+        merged: dict[str, Any] = dict(metadata) if metadata else {}
+        merged["source"] = "crewai"
+        merged["saved_at"] = datetime.now(timezone.utc).isoformat()
         agent_id = agent or self._agent_id
         if agent_id:
             merged["agent_id"] = agent_id
-        if metadata:
-            merged.update(metadata)
         content = value if isinstance(value, str) else str(value)
         self._client.add(content, metadata=merged)
 
