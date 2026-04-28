@@ -8,6 +8,7 @@ or used as a standalone ``MemoryStorage`` replacement.
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from typing import Any
 
@@ -38,7 +39,15 @@ class LedgerMemLongTermMemory:
         agent_id = agent or self._agent_id
         if agent_id:
             merged["agent_id"] = agent_id
-        content = value if isinstance(value, str) else str(value)
+        # Serialize dict/list values as JSON so they round-trip through
+        # search results — str(dict) produces "{'k': 'v'}" with single
+        # quotes, which is not valid JSON and breaks any downstream parser.
+        if isinstance(value, str):
+            content = value
+        elif isinstance(value, (dict, list)):
+            content = json.dumps(value, default=str)
+        else:
+            content = str(value)
         self._client.add(content, metadata=merged)
 
     def search(
@@ -48,7 +57,12 @@ class LedgerMemLongTermMemory:
         score_threshold: float | None = None,
     ) -> list[dict[str, Any]]:
         """Semantic search returning CrewAI-shaped result dicts."""
-        response = self._client.search(query, limit=limit)
+        # When a score_threshold is set we have to ask the server for more
+        # than `limit` rows because the threshold filter runs *after*
+        # retrieval — without over-fetching we'd return fewer than `limit`
+        # eligible hits whenever the bottom of the page is below threshold.
+        fetch_limit = max(limit * 4, 20) if score_threshold is not None else limit
+        response = self._client.search(query, limit=fetch_limit)
         out: list[dict[str, Any]] = []
         for hit in getattr(response, "hits", []) or []:
             score = getattr(hit, "score", None)
@@ -62,10 +76,17 @@ class LedgerMemLongTermMemory:
                     "score": score,
                 }
             )
+            if len(out) >= limit:
+                break
         return out
 
     def reset(self) -> None:
         """Delete every memory in the workspace this client points at."""
+        # Snapshot every id BEFORE deleting. Deleting during pagination
+        # mutates the underlying collection — depending on the backend this
+        # either skips rows (server-side cursors that compact) or loops
+        # forever (offset-based cursors that re-shift on delete).
+        ids: list[str] = []
         cursor: str | None = None
         while True:
             page = self._client.list(limit=100, cursor=cursor)
@@ -73,7 +94,9 @@ class LedgerMemLongTermMemory:
             for item in items:
                 memory_id = getattr(item, "id", None)
                 if memory_id is not None:
-                    self._client.delete(memory_id)
+                    ids.append(memory_id)
             cursor = getattr(page, "next_cursor", None)
             if not cursor:
-                return
+                break
+        for memory_id in ids:
+            self._client.delete(memory_id)
