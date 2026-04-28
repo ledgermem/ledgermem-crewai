@@ -66,8 +66,14 @@ class LedgerMemLongTermMemory:
         out: list[dict[str, Any]] = []
         for hit in getattr(response, "hits", []) or []:
             score = getattr(hit, "score", None)
-            if score_threshold is not None and score is not None and score < score_threshold:
-                continue
+            # When a caller asks for a score threshold they want a quality
+            # gate — a hit without any score should be dropped, not
+            # silently let through. The previous ``score is not None``
+            # guard meant any backend that omitted scores returned every
+            # row regardless of the threshold.
+            if score_threshold is not None:
+                if score is None or score < score_threshold:
+                    continue
             out.append(
                 {
                     "id": getattr(hit, "id", None),
