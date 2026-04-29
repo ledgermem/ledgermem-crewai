@@ -3,14 +3,14 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "ledgermem-crewai"
+name = "getmnemo-crewai"
 version = "0.1.0"
-description = "CrewAI long-term memory provider backed by LedgerMem."
+description = "CrewAI long-term memory provider backed by Mnemo."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
-authors = [{ name = "LedgerMem", email = "founders@proofly.dev" }]
-keywords = ["ledgermem", "crewai", "memory", "agents", "llm"]
+authors = [{ name = "Mnemo", email = "founders@getmnemo.xyz" }]
+keywords = ["getmnemo", "crewai", "memory", "agents", "llm"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
@@ -21,7 +21,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-  "ledgermem>=0.1",
+  "getmnemo>=0.1",
   "crewai>=0.80",
 ]
 
@@ -34,12 +34,12 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ledgermem/ledgermem-crewai"
-Issues = "https://github.com/ledgermem/ledgermem-crewai/issues"
-Source = "https://github.com/ledgermem/ledgermem-crewai"
+Homepage = "https://github.com/getmnemo/getmnemo-crewai"
+Issues = "https://github.com/getmnemo/getmnemo-crewai/issues"
+Source = "https://github.com/getmnemo/getmnemo-crewai"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/ledgermem_crewai"]
+packages = ["src/getmnemo_crewai"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

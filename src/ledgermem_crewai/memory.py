@@ -1,4 +1,4 @@
-"""CrewAI long-term memory provider backed by LedgerMem.
+"""CrewAI long-term memory provider backed by Mnemo.
 
 CrewAI memory backends expose three primary methods used by the framework:
 ``save``, ``search``, and ``reset``. We implement that contract directly so the
@@ -12,13 +12,13 @@ import json
 from datetime import datetime, timezone
 from typing import Any
 
-from ledgermem import LedgerMem
+from getmnemo import Mnemo
 
 
-class LedgerMemLongTermMemory:
+class MnemoLongTermMemory:
     """A CrewAI-compatible long-term memory provider."""
 
-    def __init__(self, client: LedgerMem, agent_id: str | None = None) -> None:
+    def __init__(self, client: Mnemo, agent_id: str | None = None) -> None:
         self._client = client
         self._agent_id = agent_id
 
@@ -30,7 +30,7 @@ class LedgerMemLongTermMemory:
         metadata: dict[str, Any] | None = None,
         agent: str | None = None,
     ) -> None:
-        """Persist ``value`` to LedgerMem with optional metadata."""
+        """Persist ``value`` to Mnemo with optional metadata."""
         # Caller metadata is merged FIRST so trusted server-controlled fields
         # (source, agent_id, saved_at) cannot be overwritten by untrusted input.
         merged: dict[str, Any] = dict(metadata) if metadata else {}

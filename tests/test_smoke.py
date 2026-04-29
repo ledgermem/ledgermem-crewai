@@ -1,4 +1,4 @@
-"""Smoke test: the CrewAI memory provider talks to a mocked LedgerMem SDK."""
+"""Smoke test: the CrewAI memory provider talks to a mocked Mnemo SDK."""
 
 from __future__ import annotations
 
@@ -7,12 +7,12 @@ import types
 from unittest.mock import MagicMock
 
 
-def _install_fake_ledgermem() -> None:
-    if "ledgermem" in sys.modules:
+def _install_fake_getmnemo() -> None:
+    if "getmnemo" in sys.modules:
         return
-    fake = types.ModuleType("ledgermem")
+    fake = types.ModuleType("getmnemo")
 
-    class LedgerMem:
+    class Mnemo:
         def __init__(self, *a, **k):
             pass
 
@@ -28,28 +28,28 @@ def _install_fake_ledgermem() -> None:
         def list(self, limit=20, cursor=None):
             return types.SimpleNamespace(items=[], next_cursor=None)
 
-    class AsyncLedgerMem(LedgerMem):
+    class AsyncMnemo(Mnemo):
         pass
 
-    fake.LedgerMem = LedgerMem
-    fake.AsyncLedgerMem = AsyncLedgerMem
-    sys.modules["ledgermem"] = fake
+    fake.Mnemo = Mnemo
+    fake.AsyncMnemo = AsyncMnemo
+    sys.modules["getmnemo"] = fake
 
 
-_install_fake_ledgermem()
+_install_fake_getmnemo()
 
-from ledgermem import LedgerMem  # noqa: E402
-from ledgermem_crewai import LedgerMemLongTermMemory  # noqa: E402
+from getmnemo import Mnemo  # noqa: E402
+from getmnemo_crewai import MnemoLongTermMemory  # noqa: E402
 
 
 def test_imports() -> None:
-    assert LedgerMemLongTermMemory is not None
+    assert MnemoLongTermMemory is not None
 
 
 def test_save_attaches_metadata() -> None:
-    client = LedgerMem()
+    client = Mnemo()
     client.add = MagicMock(return_value=None)
-    memory = LedgerMemLongTermMemory(client=client, agent_id="researcher")
+    memory = MnemoLongTermMemory(client=client, agent_id="researcher")
     memory.save("Found a paper on RAG.", metadata={"task": "research"})
     args, kwargs = client.add.call_args
     assert args[0] == "Found a paper on RAG."
@@ -59,13 +59,13 @@ def test_save_attaches_metadata() -> None:
 
 
 def test_search_threshold_filter() -> None:
-    client = LedgerMem()
+    client = Mnemo()
     hits = [
         type("Hit", (), {"id": "a", "content": "high", "metadata": {}, "score": 0.9})(),
         type("Hit", (), {"id": "b", "content": "low", "metadata": {}, "score": 0.2})(),
     ]
     client.search = MagicMock(return_value=type("R", (), {"hits": hits})())
-    memory = LedgerMemLongTermMemory(client=client)
+    memory = MnemoLongTermMemory(client=client)
     results = memory.search("anything", limit=5, score_threshold=0.5)
     assert len(results) == 1
     assert results[0]["id"] == "a"
