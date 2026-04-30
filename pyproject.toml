@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "getmnemo-crewai"
+name = "mnemo-crewai"
 version = "0.1.0"
 description = "CrewAI long-term memory provider backed by Mnemo."
 readme = "README.md"
